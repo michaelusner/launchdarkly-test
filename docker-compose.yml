@@ -1,0 +1,20 @@
+---
+version: "3.7"
+services:
+  back:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    volumes:
+      - ${PWD}/back-end:/app
+    ports:
+      - 8080:8080
+
+  front:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    volumes:
+      - ${PWD}/front-end:/app
+    ports:
+      - 3000:3000
