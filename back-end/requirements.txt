@@ -1,4 +1,5 @@
 fastapi==0.73.0
 IMDbPY==2021.4.18
+launchdarkly-server-sdk==7.3.1
 ldclient==0.0.1
 uvicorn==0.17.4

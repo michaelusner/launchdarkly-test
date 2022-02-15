@@ -25,3 +25,6 @@ class MovieDb:
         return Certification(
             [i.strip() for i in ret["data"]["certification"] if "United States" in i][0]
         )
+
+    def get_synopsis(self, movie_id: str) -> str:
+        return self.client.get_movie_synopsis(movieID=movie_id)
