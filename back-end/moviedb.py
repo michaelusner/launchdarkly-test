@@ -20,6 +20,10 @@ class MovieDb:
     def search(self, name: str) -> List:
         return self.client.search_movie(name)
 
+    def get_title(self, movie_id: str) -> str:
+        ret = self.client.get_movie(movieID=movie_id).get("title", "No title")
+        return ret
+
     def get_rating(self, movie_id: str, region: str = "United States") -> Certification:
         ret = self.client.get_movie_parents_guide(movie_id)
         return Certification(
@@ -27,4 +31,4 @@ class MovieDb:
         )
 
     def get_synopsis(self, movie_id: str) -> str:
-        return self.client.get_movie_synopsis(movieID=movie_id)
+        return self.client.get_movie_synopsis(movieID=movie_id)["data"]["plot"][0]
