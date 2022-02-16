@@ -18,7 +18,8 @@ function Synopsis() {
 
     useEffect(() => {
         fetchSynopsis();
-    }, []);
+    }, [showSynopsis]);
+
 
     return showSynopsis ? <div>Synopsis: {synopsis}</div> : null;
 }
