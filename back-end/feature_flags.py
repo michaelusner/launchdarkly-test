@@ -2,9 +2,9 @@ import atexit
 import logging
 from functools import wraps
 from os import environ
-from typing import Any
+from typing import Union
 
-import ldclient
+import ldclient as __ldclient
 from fastapi import HTTPException, status
 from ldclient.config import Config
 from pydantic import BaseModel
@@ -16,41 +16,57 @@ from pydantic import BaseModel
 logging.basicConfig(level=logging.INFO)
 
 
-def feature_flag_init():
-    global blah
+class FeatureError(Exception):
+    pass
 
 
-# ldclient must be a singleton.  Do not create more ldclient instances.
-ldclient.set_config(Config(environ["LAUNCHDARKLY_KEY"]))
-feature_flag_client = ldclient.get()
+def init(**kwargs):
+    # ldclient should be shared.  Do not import ldclient directly in your code.
+    __ldclient.set_config(
+        Config(
+            environ["LAUNCHDARKLY_KEY"],
+            base_uri=environ.get("LAUNCHDARKLY_URI", "https://app.launchdarkly.com"),
+            events_uri=environ.get(
+                "LAUNCHDARKLY_EVENTS_URI", "https://events.launchdarkly.com"
+            ),
+            stream_uri=environ.get(
+                "LAUNCHDARKLY_STREAM_URI", "https://stream.launchdarkly.com"
+            ),
+            **kwargs,
+        )
+    )
 
-# register a handler to close the flag client on exit
-atexit.register(lambda: feature_flag_client.close())
+    # register a handler to close the flag client on exit
+    atexit.register(lambda: __ldclient.get().close() if __ldclient.__client else None)
 
 
-class FeatureFlag:
-    def __init__(self, key: str, user: dict, default: Any = None) -> None:
+def flag(key: str, user: dict, default: None):
+    return __ldclient.get().variation(key=key, user=user, default=default)
+
+
+class Flag:
+    def __init__(
+        self, key: str, user: dict, default: Union[bool, int, str, dict] = None
+    ) -> None:
         self.key = key
         self.user = user
         self.default = default
 
     def __enter__(self):
-        return feature_flag_client.variation(
-            key=self.key, user=self.user, default=self.default
-        )
+        return flag(key=self.key, user=self.user, default=self.default)
 
     def __exit__(self, exc_type, exc_value, exc_traceback):
         # do nothing
         pass
 
 
-class FeatureFlagEnabled:
+class FlagRequired:
     def __init__(self, key: str, user: dict):
         self.key = key
         self.user = user
 
     def __enter__(self):
-        with FeatureFlag(key=self.key, user=self.user) as flag:
+        with Flag(key=self.key, user=self.user) as flag:
             logging.info("%s flag is %s", self.key, flag)
             if not flag:
                 raise HTTPException(
@@ -85,7 +101,7 @@ def feature_flag(key):
     def flag_deco(func):
         @wraps(func)
         async def wrapper(*args, **kwargs):
-            with FeatureFlagEnabled(
+            with FlagRequired(
                 key=key, user={"key": kwargs["user"].customer_id, "anonymous": False}
             ):
                 return await func(*args, **kwargs)
@@ -93,7 +109,3 @@ def feature_flag(key):
         return wrapper
 
     return flag_deco
-
-
-# with FeatureFlag(key='something') as data:
-# code with data

@@ -3,7 +3,7 @@ import React, { useState, useEffect } from "react";
 import "./App.css";
 
 function Synopsis() {
-    const { showSynopsis } = useFlags();
+    const { T_20220217_1234_SHOW_MOVIE_SYNOPSIS } = useFlags();
     const [synopsis, setSynopsis] = useState([])
     const fetchSynopsis = async () => {
         setSynopsis("loading...")
@@ -18,10 +18,9 @@ function Synopsis() {
 
     useEffect(() => {
         fetchSynopsis();
-    }, [showSynopsis]);
+    }, [T_20220217_1234_SHOW_MOVIE_SYNOPSIS]);
 
-
-    return showSynopsis ? <div>Synopsis: {synopsis}</div> : null;
+    return T_20220217_1234_SHOW_MOVIE_SYNOPSIS ? <div>Synopsis: {synopsis}</div> : null;
 }
 
 export default Synopsis

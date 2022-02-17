@@ -1,5 +1,5 @@
 import pytest
-from ldlib import FeatureFlag
+from feature_flags import FeatureFlag
 
 anonymous_user = {"key": "abc", "anonymous": True}
 

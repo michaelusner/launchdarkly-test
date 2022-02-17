@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, Request, Response
-from ldlib import User, feature_flag, get_authenticated_user
+from feature_flags import User, feature_flag, get_authenticated_user
 from moviedb import MovieDb
 
 router = APIRouter(tags=["Movie"])
@@ -16,7 +16,7 @@ async def get_rating(movie_id: str):
 
 
 @router.get("/{movie_id}/synopsis")
-@feature_flag(key="showSynopsis")
+@feature_flag(key="T_20220217_1234_SHOW_MOVIE_SYNOPSIS")
 async def get_synopsis(
     movie_id: str,
     request: Request,
