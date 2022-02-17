@@ -1,7 +1,10 @@
+import logging
 from enum import Enum
 from typing import List
 
 from imdb import IMDb
+
+logging.basicConfig(level=logging.INFO)
 
 
 class Certification(Enum):
@@ -21,7 +24,8 @@ class MovieDb:
         return self.client.search_movie(name)
 
     def get_title(self, movie_id: str) -> str:
-        ret = self.client.get_movie(movieID=movie_id).get("title", "No title")
+        movie = self.client.get_movie(movieID=movie_id)
+        ret = movie.get("title", "No title")
         return ret
 
     def get_rating(self, movie_id: str, region: str = "United States") -> Certification:

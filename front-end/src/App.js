@@ -43,8 +43,5 @@ function App() {
 
 
 export default withLDProvider({
-  clientSideID: "620bd47d10601a14da99784b",
-  options: {
-    bootstrap: "localStorage"
-  }
+  clientSideID: "620bd47d10601a14da99784b",  // should be in vault - environment specific
 })(App);
