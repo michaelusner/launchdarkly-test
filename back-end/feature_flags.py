@@ -1,7 +1,7 @@
 import logging
 from functools import wraps
 from os import environ
-from typing import Union
+from typing import Any, Union
 
 import ldclient as __ldclient
 from fastapi import HTTPException, status
@@ -60,22 +60,28 @@ class Flag:
         return flag(key=self.key, user=self.user, default=self.default)
 
     def __exit__(self, exc_type, exc_value, exc_traceback):
-        x = 5
+        pass
 
 
 class FlagRequired:
-    def __init__(self, key: str, user: dict):
+    def __init__(self, key: str, user: dict, value: Any = None):
         self.key = key
         self.user = user
+        self.value = value
 
     def __enter__(self):
-        with Flag(key=self.key, user=self.user) as flag:
-            logging.info("%s flag is %s", self.key, flag)
-            if not flag:
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail=f"Feature flag {self.key} is False",
-                )
+        variation = flag(key=self.key, user=self.user, default=None)
+        logging.info("%s flag is %s", self.key, variation)
+        if not flag:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Feature flag {self.key} is False",
+            )
+        if variation != self.value:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Feature flag {self.key}=={self.value} (expected {self.value})",
+            )
 
     def __exit__(self, exc_type, exc_value, exc_traceback):
         # do nothing
@@ -100,12 +106,14 @@ def get_authenticated_user():
     )
 
 
-def feature_flag(key):
+def feature_flag(key, value):
     def flag_deco(func):
         @wraps(func)
         async def wrapper(*args, **kwargs):
             with FlagRequired(
-                key=key, user={"key": kwargs["user"].customer_id, "anonymous": False}
+                key=key,
+                value=value,
+                user={"key": kwargs["user"].customer_id, "anonymous": False},
             ):
                 return await func(*args, **kwargs)
 
