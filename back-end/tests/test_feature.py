@@ -1,10 +1,11 @@
 import pytest
-from feature_flags import FeatureFlag
+from feature_flags import flag
 
 anonymous_user = {"key": "abc", "anonymous": True}
 
 
 @pytest.mark.parametrize("flag_state", [(True), (False)])
+@pytest.mark.skipif(flag("T_20220217_1234_SHOW_MOVIE_SYNOPSIS", anonymous_user))
 def test_flag_status(flag_state, synopsis_flag_on):
     with FeatureFlag(
         key="musner_movie_synopsis_1_20220214", user=anonymous_user
