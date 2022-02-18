@@ -41,7 +41,7 @@ def init(**kwargs):
 
 
 def flag(key: str, user: dict, default: None):
-    if not __ldclient.is_initialized():
+    if __ldclient.__config is None:
         init()
     return __ldclient.get().variation(key=key, user=user, default=default)
 
