@@ -1,4 +1,3 @@
-import atexit
 import logging
 from functools import wraps
 from os import environ
@@ -36,14 +35,17 @@ def init(**kwargs):
         )
     )
 
-    # register a handler to close the flag client on exit
-    atexit.register(lambda: __ldclient.get().close() if __ldclient.__client else None)
-
 
 def flag(key: str, user: dict, default: None):
     if __ldclient.__config is None:
         init()
-    return __ldclient.get().variation(key=key, user=user, default=default)
+    with __ldclient.get() as client:
+        return client.variation(key=key, user=user, default=default)
+
+
+def close():
+    if __ldclient.__config:
+        __ldclient.get().close()
 
 
 class Flag:
@@ -58,8 +60,7 @@ class Flag:
         return flag(key=self.key, user=self.user, default=self.default)
 
     def __exit__(self, exc_type, exc_value, exc_traceback):
-        # do nothing
-        pass
+        x = 5
 
 
 class FlagRequired:

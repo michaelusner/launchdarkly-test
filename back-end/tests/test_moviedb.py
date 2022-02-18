@@ -24,4 +24,7 @@ def test_get_rating(movies):
 
 def test_get_synopsis(movies):
     synopsis = movies.get_synopsis("0092086")
-    assert len(synopsis["data"]["plot"])
+    assert (
+        synopsis
+        == "Three actors accept an invitation to a Mexican village to perform their onscreen bandit fighter roles, unaware that it is the real thing."
+    )
