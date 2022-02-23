@@ -16,7 +16,7 @@ async def get_rating(movie_id: str):
 
 
 @router.get("/{movie_id}/synopsis")
-@route_feature_flag(key="SHOW_SYNOPSIS", value=True)
+@route_feature_flag(key="TEST_FEATURE_FLAG", value=True)
 async def get_synopsis(
     movie_id: str,
     request: Request,

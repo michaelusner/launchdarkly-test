@@ -1,8 +1,7 @@
 import logging
 from functools import wraps
-from inspect import iscoroutinefunction
 from os import environ
-from typing import Any, Union
+from typing import Any
 
 import ldclient as __ldclient
 from fastapi import HTTPException, status

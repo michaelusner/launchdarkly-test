@@ -15,7 +15,7 @@ def test_get_rating(client):
     assert Certification(response.json()) == Certification.PG
 
 
-@pytest.mark.mock_feature_flag(key="SHOW_SYNOPSIS", value=True)
+@pytest.mark.mock_feature_flag(key="TEST_FEATURE_FLAG", value=True)
 def test_synopsis_feature_on_should_200(mock_feature_flag, http_client):
     with http_client.get("/movie/0092086/synopsis") as resp:
         assert resp.status_code == 200
@@ -25,7 +25,7 @@ def test_synopsis_feature_on_should_200(mock_feature_flag, http_client):
         )
 
 
-@pytest.mark.mock_feature_flag(key="SHOW_SYNOPSIS", value=False)
+@pytest.mark.mock_feature_flag(key="TEST_FEATURE_FLAG", value=False)
 def test_synopsis_feature_off_should_404(mock_feature_flag, http_client):
     with http_client.get("/movie/0092086/synopsis") as resp:
         assert resp.status_code == 404

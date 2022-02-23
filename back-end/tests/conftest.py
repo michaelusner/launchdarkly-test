@@ -16,15 +16,24 @@ def http_client():
         yield client
 
 
-@pytest.fixture(scope="function")
+flag_values = dict()
+
+
+def get_variation(*args, **kwargs):
+    return flag_values[kwargs["key"]]
+
+
+@pytest.fixture
 def mock_feature_flag(request):
     marker = request.node.get_closest_marker("mock_feature_flag")
     if "key" not in marker.kwargs:
         raise AssertionError("mock_feature_flag: no flag key provided")
     if "value" not in marker.kwargs:
         raise AssertionError("mock_feature_flag: no flag value provided")
+    flag_values[marker.kwargs["key"]] = marker.kwargs["value"]
     with patch("ldclient.LDClient", autospec=True) as client:
-        client.return_value.variation.return_value = marker.kwargs["value"]
+        logging.info("%s = %s", marker.kwargs["key"], marker.kwargs["value"])
+        client.return_value.variation = get_variation
         yield marker.kwargs["value"]
 
 

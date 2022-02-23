@@ -3,7 +3,7 @@ import React, { useState, useEffect } from "react";
 import "./App.css";
 
 function Synopsis() {
-    const { SHOW_SYNOPSIS } = useFlags();
+    const { TEST_FEATURE_FLAG } = useFlags();
     const [synopsis, setSynopsis] = useState([])
     const fetchSynopsis = async () => {
         setSynopsis("loading...")
@@ -18,9 +18,9 @@ function Synopsis() {
 
     useEffect(() => {
         fetchSynopsis();
-    }, [SHOW_SYNOPSIS]);
+    }, [TEST_FEATURE_FLAG]);
 
-    return SHOW_SYNOPSIS ? <div>Synopsis: {synopsis}</div> : null;
+    return TEST_FEATURE_FLAG ? <div>Synopsis: {synopsis}</div> : null;
 }
 
 export default Synopsis
