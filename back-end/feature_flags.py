@@ -8,22 +8,16 @@ from fastapi import HTTPException, status
 from ldclient.config import Config
 from pydantic import BaseModel
 
-# TODO: create an init function here that creates the ldclient
 # TODO: provide mock for unit/component tests
-# TODO: consider caching scenarios
 
 logging.basicConfig(level=logging.INFO)
-
-
-class FeatureError(Exception):
-    pass
 
 
 def init(**kwargs):
     # ldclient should be shared.  Do not import ldclient directly in your code.
     __ldclient.set_config(
         Config(
-            environ["LAUNCHDARKLY_KEY"],
+            environ.get("LAUNCHDARKLY_SDK_KEY", ""),
             base_uri=environ.get("LAUNCHDARKLY_URI", "https://app.launchdarkly.com"),
             events_uri=environ.get(
                 "LAUNCHDARKLY_EVENTS_URI", "https://events.launchdarkly.com"
@@ -39,8 +33,7 @@ def init(**kwargs):
 def flag(key: str, user: dict, default: None):
     if __ldclient.__config is None:
         init()
-    with __ldclient.get() as client:
-        return client.variation(key=key, user=user, default=default)
+    return __ldclient.get().variation(key=key, user=user, default=default)
 
 
 def close():
@@ -48,7 +41,7 @@ def close():
         __ldclient.get().close()
 
 
-class Flag:
+class FeatureFlag:
     def __init__(
         self, key: str, user: dict, default: Union[bool, int, str, dict] = None
     ) -> None:
@@ -60,19 +53,21 @@ class Flag:
         return flag(key=self.key, user=self.user, default=self.default)
 
     def __exit__(self, exc_type, exc_value, exc_traceback):
+        # no cleanup necessary
         pass
 
 
 class FlagRequired:
-    def __init__(self, key: str, user: dict, value: Any = None):
+    def __init__(self, key: str, user: dict, value: Any = None, default: Any = None):
         self.key = key
         self.user = user
         self.value = value
+        self.default = default
 
     def __enter__(self):
-        variation = flag(key=self.key, user=self.user, default=None)
+        variation = flag(key=self.key, user=self.user, default=self.default)
         logging.info("%s flag is %s", self.key, variation)
-        if not flag:
+        if not variation:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Feature flag {self.key} is False",
@@ -84,7 +79,7 @@ class FlagRequired:
             )
 
     def __exit__(self, exc_type, exc_value, exc_traceback):
-        # do nothing
+        # no cleanup necessary
         pass
 
 
@@ -113,7 +108,7 @@ def feature_flag(key, value):
             with FlagRequired(
                 key=key,
                 value=value,
-                user={"key": kwargs["user"].customer_id, "anonymous": False},
+                user=kwargs.get("user"),
             ):
                 return await func(*args, **kwargs)
 
