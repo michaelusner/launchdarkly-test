@@ -1,8 +1,6 @@
 import logging
-from unittest.mock import Mock, create_autospec, patch
-from venv import create
+from unittest.mock import patch
 
-import ldclient
 import pytest
 from fastapi.testclient import TestClient
 from feature_flags import FeatureFlag
@@ -18,7 +16,7 @@ def http_client():
         yield client
 
 
-@pytest.fixture
+@pytest.fixture(scope="function")
 def mock_feature_flag(request):
     marker = request.node.get_closest_marker("mock_feature_flag")
     if "key" not in marker.kwargs:
@@ -30,7 +28,7 @@ def mock_feature_flag(request):
         yield marker.kwargs["value"]
 
 
-@pytest.fixture
+@pytest.fixture(scope="function")
 def feature_flag(request):
     marker = request.node.get_closest_marker("feature_flag")
     if "key" not in marker.kwargs:

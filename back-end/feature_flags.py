@@ -1,5 +1,6 @@
 import logging
 from functools import wraps
+from inspect import iscoroutinefunction
 from os import environ
 from typing import Any, Union
 
@@ -30,7 +31,13 @@ def init(**kwargs):
     )
 
 
-def flag(key: str, user: dict, default: None):
+def flag(key: str, user: dict, default: Any = None):
+    """
+    if feature_flags.flag(key="test_flag_should_equal_value", user=anonymous_user, default=True):
+        code...
+    else:
+        code...
+    """
     if __ldclient.__config is None:
         init()
     return __ldclient.get().variation(key=key, user=user, default=default)
@@ -43,40 +50,28 @@ def close():
 
 class FeatureFlag:
     def __init__(
-        self, key: str, user: dict, default: Union[bool, int, str, dict] = None
-    ) -> None:
-        self.key = key
-        self.user = user
-        self.default = default
-
-    def __enter__(self):
-        return flag(key=self.key, user=self.user, default=self.default)
-
-    def __exit__(self, exc_type, exc_value, exc_traceback):
-        # no cleanup necessary
-        pass
-
-
-class FlagRequired:
-    def __init__(self, key: str, user: dict, value: Any = None, default: Any = None):
+        self,
+        key: str,
+        user: dict,
+        value: Any = None,
+        default: Any = None,
+        raise_on_disabled=False,
+    ):
         self.key = key
         self.user = user
         self.value = value
         self.default = default
+        self.raise_on_disabled = raise_on_disabled
 
     def __enter__(self):
         variation = flag(key=self.key, user=self.user, default=self.default)
         logging.info("%s flag is %s", self.key, variation)
-        if not variation:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Feature flag {self.key} is False",
-            )
-        if variation != self.value:
+        if not variation or (variation != self.value and self.raise_on_disabled):
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Feature flag {self.key}=={self.value} (expected {self.value})",
             )
+        return variation
 
     def __exit__(self, exc_type, exc_value, exc_traceback):
         # no cleanup necessary
@@ -101,17 +96,18 @@ def get_authenticated_user():
     )
 
 
-def feature_flag(key, value):
+def route_feature_flag(key, value, raise_on_disabled=True):
     def flag_deco(func):
         @wraps(func)
-        async def wrapper(*args, **kwargs):
-            with FlagRequired(
+        async def async_wrapper(*args, **kwargs):
+            with FeatureFlag(
                 key=key,
                 value=value,
                 user=kwargs.get("user"),
+                raise_on_disabled=raise_on_disabled,
             ):
                 return await func(*args, **kwargs)
 
-        return wrapper
+        return async_wrapper
 
     return flag_deco
