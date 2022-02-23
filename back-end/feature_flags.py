@@ -1,3 +1,4 @@
+import hashlib
 import logging
 from functools import wraps
 from os import environ
@@ -47,6 +48,28 @@ def close():
         __ldclient.get().close()
 
 
+class User(BaseModel):
+    email: str
+    first: str
+    last: str
+    customer_id: str
+    permissions: list
+
+
+def get_ld_user(user: User) -> dict:
+    private_attrs = ["email"]
+    if user.email in {"nobody@nowhere", "anonymous"} or user.email.endswith("@hpe.com"):
+        private_attrs = []
+    return {
+        "key": hashlib.sha256(user.customer_id.encode("UTF-8")).hexdigest(),
+        "email": user.email,
+        "privateAttributeNames": private_attrs,
+        "custom": {
+            "cid": "test123",
+        },
+    }
+
+
 class FeatureFlag:
     def __init__(
         self,
@@ -63,7 +86,9 @@ class FeatureFlag:
         self.raise_on_disabled = raise_on_disabled
 
     def __enter__(self):
-        variation = flag(key=self.key, user=self.user, default=self.default)
+        variation = flag(
+            key=self.key, user=get_ld_user(self.user), default=self.default
+        )
         logging.info("%s flag is %s", self.key, variation)
         if not variation or (variation != self.value and self.raise_on_disabled):
             raise HTTPException(
@@ -75,14 +100,6 @@ class FeatureFlag:
     def __exit__(self, exc_type, exc_value, exc_traceback):
         # no cleanup necessary
         pass
-
-
-class User(BaseModel):
-    email: str
-    first: str
-    last: str
-    customer_id: str
-    permissions: list
 
 
 def get_authenticated_user():
