@@ -1,3 +1,5 @@
+from http.client import HTTPException
+
 import pytest
 from fastapi.testclient import TestClient
 from main import app
@@ -25,7 +27,9 @@ def test_synopsis_feature_on_should_200(mock_feature_flag, http_client):
         )
 
 
-@pytest.mark.mock_feature_flag(key="TEST_FEATURE_FLAG", value=False)
+@pytest.mark.mock_feature_flag(
+    key="TEST_FEATURE_FLAG", value=False, raise_on_disabled=HTTPException
+)
 def test_synopsis_feature_off_should_404(mock_feature_flag, http_client):
     with http_client.get("/movie/0092086/synopsis") as resp:
         assert resp.status_code == 404

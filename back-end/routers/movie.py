@@ -1,5 +1,5 @@
+import feature_flags
 from fastapi import APIRouter, Depends, Request, Response
-from feature_flags import User, get_authenticated_user, route_feature_flag
 from moviedb import MovieDb
 
 router = APIRouter(tags=["Movie"])
@@ -16,11 +16,11 @@ async def get_rating(movie_id: str):
 
 
 @router.get("/{movie_id}/synopsis")
-@route_feature_flag(key="TEST_FEATURE_FLAG", value=True)
+@feature_flags.route_feature_flag(key="TEST_FEATURE_FLAG", value=True)
 async def get_synopsis(
     movie_id: str,
     request: Request,
     response: Response,
-    user: User = Depends(get_authenticated_user),
+    user=Depends(feature_flags.get_launchdarkly_user),
 ):
     return MovieDb().get_synopsis(movie_id=movie_id)
